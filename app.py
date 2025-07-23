@@ -1,6 +1,6 @@
 import streamlit as st
 import cv2
-from pyzbar.pyzbar import decode
+#from pyzbar.pyzbar import decode
 import pandas as pd
 from datetime import date
 from dateutil.relativedelta import relativedelta
