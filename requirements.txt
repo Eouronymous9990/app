@@ -1,0 +1,9 @@
+streamlit
+opencv-python
+pyzbar
+pandas
+python-dateutil
+qrcode[pil]
+pillow
+plotly
+numpy
