@@ -6,4 +6,4 @@ plotly==5.18.0
 numpy==1.23.5
 pyzbar==0.1.9
 Pillow==9.5.0
-openpyxl==3.1.2  # For Excel support on Windows
+setuptools==65.5.0  # Required for older packages
