@@ -1,8 +1,8 @@
 streamlit==1.32.2
-pandas==2.0.3  # تم تخفيض الإصدار لتفادي مشاكل التجميع
+pandas==2.0.3
 python-dateutil==2.8.2
 qrcode[pil]==7.4.2
-pillow==10.2.0
+pillow==9.5.0  # إصدار أقدم وأكثر استقرارًا
 plotly==5.18.0
 numpy==1.26.3
 pyzbar==0.1.9
