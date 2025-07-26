@@ -1,6 +1,5 @@
 import streamlit as st
-import cv2
-#from pyzbar.pyzbar import decode
+from pyzbar.pyzbar import decode
 import pandas as pd
 from datetime import date
 from dateutil.relativedelta import relativedelta
@@ -62,6 +61,10 @@ class HulkGymQRSystem:
                 background-color: #121212;
                 color: white;
             }
+            .stCameraInput > div {
+                border-radius: 10px;
+                overflow: hidden;
+            }
         </style>
         """, unsafe_allow_html=True)
         
@@ -79,51 +82,23 @@ class HulkGymQRSystem:
     
     def scan_qr_tab(self):
         st.header("🔍 Member Check-In")
-        
-        if 'camera_on' not in st.session_state:
-            st.session_state.camera_on = False
-        
-        col1, col2 = st.columns(2)
-        if col1.button("🎥 Start Camera"):
-            st.session_state.camera_on = True
-            st.session_state.last_qr = None
-        
-        if col2.button("⏹️ Stop Camera"):
-            st.session_state.camera_on = False
-            st.rerun()
-        
         welcome_placeholder = st.empty()
-        camera_placeholder = st.empty()
         
-        if st.session_state.camera_on:
-            self.show_camera_feed(camera_placeholder, welcome_placeholder)
-        else:
-            camera_placeholder.empty()
-            welcome_placeholder.empty()
-    
-    def show_camera_feed(self, camera_placeholder, welcome_placeholder):
-        cap = cv2.VideoCapture(0)
+        # استخدام st.camera_input بدلاً من cv2.VideoCapture
+        img_file = st.camera_input("Scan QR Code", key="qr_scanner")
         
-        while st.session_state.camera_on:
-            ret, frame = cap.read()
-            if not ret:
-                st.error("Failed to capture frame")
-                break
-            
-            qr_codes = decode(frame)
-            if qr_codes:
-                for qr in qr_codes:
-                    qr_data = qr.data.decode('utf-8').strip()
-                    if qr_data and qr_data != getattr(st.session_state, 'last_qr', None):
-                        st.session_state.last_qr = qr_data
+        if img_file is not None:
+            try:
+                img = Image.open(img_file)
+                frame = np.array(img)
+                qr_codes = decode(frame)
+                
+                if qr_codes:
+                    for qr in qr_codes:
+                        qr_data = qr.data.decode('utf-8').strip()
                         self.process_qr_code(qr_data, welcome_placeholder)
-                        break
-            
-            frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            camera_placeholder.image(frame_rgb, channels="RGB", use_container_width=True)
-            time.sleep(0.1)
-        
-        cap.release()
+            except Exception as e:
+                st.error(f"Error scanning QR: {e}")
     
     def process_qr_code(self, qr_data, welcome_placeholder):
         if qr_data in self.df['QR Code'].values:
@@ -151,7 +126,6 @@ class HulkGymQRSystem:
     def create_qr_tab(self):
         st.header("✨ Create New Member")
         
-        # Initialize session state for form submission
         if 'form_submitted' not in st.session_state:
             st.session_state.form_submitted = False
             st.session_state.form_data = {}
@@ -184,7 +158,6 @@ class HulkGymQRSystem:
                 else:
                     st.error("Please enter member name")
         
-        # Display results and download button outside the form
         if st.session_state.get('form_submitted', False):
             form_data = st.session_state.form_data
             qr_image = self.create_member(
@@ -196,7 +169,6 @@ class HulkGymQRSystem:
                 form_data['remaining']
             )
             
-            # Add download button outside the form
             st.download_button(
                 label="⬇️ Download QR Code",
                 data=qr_image,
@@ -208,18 +180,15 @@ class HulkGymQRSystem:
         start_date = date.today()
         end_date = start_date + relativedelta(months=months)
         
-        # إنشاء QR Code
         qr = qrcode.QRCode(version=1, box_size=10, border=4)
         qr.add_data(user_name)
         qr.make(fit=True)
         qr_img = qr.make_image(fill_color="black", back_color="white")
         
-        # حفظ الصورة
         img_bytes = BytesIO()
         qr_img.save(img_bytes, format="PNG")
         img_bytes.seek(0)
         
-        # إضافة البيانات
         new_row = pd.DataFrame({
             'QR Code': [user_name],
             'Count': [0],
@@ -233,7 +202,6 @@ class HulkGymQRSystem:
         self.df = pd.concat([self.df, new_row], ignore_index=True)
         self.save_data()
         
-        # عرض النتيجة
         st.success("🎉 Membership created successfully!")
         
         col1, col2 = st.columns(2)
@@ -252,7 +220,6 @@ class HulkGymQRSystem:
             - **Remaining**: {remaining} EGP
             """)
         
-        # إرجاع بيانات الصورة لاستخدامها في زر التنزيل
         return img_bytes.getvalue()
     
     def renew_tab(self):
@@ -305,11 +272,9 @@ class HulkGymQRSystem:
         st.header("📊 Gym Analytics Dashboard")
         
         if not self.df.empty:
-            # بطاقات الإحصائيات
             st.subheader("📈 Key Metrics")
             self.display_stats_cards()
             
-            # الرسوم البيانية
             st.subheader("📅 Membership Analytics")
             tab1, tab2, tab3 = st.tabs(["Subscriptions", "Check-ins", "Payments"])
             
@@ -322,11 +287,9 @@ class HulkGymQRSystem:
             with tab3:
                 self.plot_payments_chart()
             
-            # بيانات الأعضاء
             st.subheader("👥 Members Data")
             st.dataframe(self.df, use_container_width=True)
             
-            # زر التصدير
             st.download_button(
                 label="📤 Export Data to Excel",
                 data=self.df.to_csv(index=False).encode('utf-8'),
