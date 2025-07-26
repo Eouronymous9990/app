@@ -1,5 +1,5 @@
 streamlit==1.32.2
-pandas==2.1.4
+pandas==2.0.3  # تم تخفيض الإصدار لتفادي مشاكل التجميع
 python-dateutil==2.8.2
 qrcode[pil]==7.4.2
 pillow==10.2.0
